@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="肠胃日记">
+<meta name="theme-color" content="#F5F0E8">
+<title>肠胃健康日记</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F5F0E8; --bg2:#EDE7DA; --card:#FDFAF5; --border:#D8D0C2;
+  --text:#28211A; --muted:#7A7060; --accent:#6E4E2A; --accent2:#B07A48;
+  --good:#3D7A52; --warn:#B07030; --bad:#A83830;
+  --nav-h:56px; --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;display:flex;flex-direction:column;}
+
+/* HEADER */
+.app-header{background:var(--card);border-bottom:1px solid var(--border);padding:0 16px;height:52px;display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:10;}
+.app-header h1{font-family:'Noto Serif SC',serif;font-size:17px;font-weight:600;color:var(--accent);letter-spacing:.04em;}
+.header-date{margin-left:auto;font-size:12px;color:var(--muted);}
+
+/* SCROLL */
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);}
+.scroll-area::-webkit-scrollbar{display:none;}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--nav-h) + var(--safe-b));padding-bottom:var(--safe-b);background:var(--card);border-top:1px solid var(--border);display:flex;z-index:100;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;color:var(--muted);font-family:'Noto Sans SC',sans-serif;font-size:10px;transition:color .15s;padding:0;}
+.nav-item .nav-icon{font-size:20px;line-height:1;}
+.nav-item.active{color:var(--accent);}
+
+/* PAGES */
+.page{display:none;padding:16px;}
+.page.active{display:block;}
+
+/* SECTION HEAD */
+.section-head{font-family:'Noto Serif SC',serif;font-size:15px;font-weight:600;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+
+/* FIELD LABEL */
+.fl{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.05em;margin-bottom:6px;margin-top:14px;display:block;}
+.fl:first-child{margin-top:0;}
+
+/* INPUTS */
+input[type=date],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;font-size:14px;outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s;}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2);}
+textarea{resize:none;min-height:70px;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A7060' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px;}
+.chip{padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-size:13px;color:var(--muted);cursor:pointer;user-select:none;transition:all .15s;font-family:'Noto Sans SC',sans-serif;white-space:nowrap;}
+.chip.sel{background:var(--accent);border-color:var(--accent);color:#fff;}
+.chip.sel-good{background:#EAF4EE;border-color:var(--good);color:var(--good);}
+.chip.sel-warn{background:#FEF3E2;border-color:var(--warn);color:var(--warn);}
+.chip.sel-bad{background:#FEECEC;border-color:var(--bad);color:var(--bad);}
+
+/* SYMPTOM GRID */
+.sym-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:2px;}
+.sym-chip{padding:8px 4px;text-align:center;border-radius:10px;border:1px solid var(--border);background:var(--bg);font-size:12px;cursor:pointer;user-select:none;transition:all .15s;font-family:'Noto Sans SC',sans-serif;line-height:1.3;}
+.sym-chip.sel{background:#FEECEC;border-color:var(--bad);color:var(--bad);}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-family:'Noto Sans SC',sans-serif;font-weight:500;cursor:pointer;margin-top:16px;transition:background .2s,transform .1s;letter-spacing:.02em;}
+.btn-primary:active{transform:scale(.98);background:#5A3D1F;}
+.btn-secondary{width:100%;padding:11px;background:transparent;color:var(--accent);border:1px solid var(--accent2);border-radius:12px;font-size:14px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;margin-top:10px;transition:all .2s;}
+.btn-secondary:active{background:var(--bg2);}
+
+/* DAILY STATUS CARD */
+.daily-status-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.status-pill{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 6px;text-align:center;cursor:pointer;transition:all .15s;}
+.status-pill .sp-icon{font-size:18px;line-height:1;margin-bottom:2px;}
+.status-pill .sp-label{font-size:10px;color:var(--muted);display:block;}
+.status-pill .sp-val{font-size:11px;font-weight:500;color:var(--text);display:block;margin-top:1px;}
+.status-pill.filled{border-color:var(--accent2);background:#FEF8F0;}
+.status-pill.filled .sp-val{color:var(--accent);}
+
+/* HISTORY */
+.log-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;position:relative;}
+.log-meta{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.log-date-text{font-size:12px;color:var(--muted);}
+.sev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sv1{background:var(--good);}.sv2{background:var(--warn);}.sv3{background:var(--bad);}
+.log-food-text{font-size:13px;margin-bottom:6px;line-height:1.5;}
+.sym-pills{display:flex;flex-wrap:wrap;gap:5px;}
+.sym-pill{padding:2px 9px;border-radius:10px;font-size:11px;background:#FEECEC;color:var(--bad);}
+.log-note-text{font-size:12px;color:var(--muted);margin-top:5px;}
+.del-btn{position:absolute;top:12px;right:12px;background:none;border:none;font-size:18px;color:var(--border);cursor:pointer;padding:4px;line-height:1;}
+.del-btn:active{color:var(--bad);}
+
+/* ANALYSIS STATS */
+.stat-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--bg2);}
+.stat-row:last-child{border-bottom:none;}
+.stat-name{flex:1;font-size:13px;}
+.sbar-bg{width:80px;height:5px;background:var(--bg2);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.sbar-fill{height:100%;border-radius:3px;background:var(--bad);}
+.stat-val{font-size:11px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
+.frow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg2);font-size:13px;}
+.frow:last-child{border-bottom:none;}
+.fbar-bg{flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;}
+.fbar-fill{height:100%;border-radius:2px;}
+.risk-chip{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap;}
+.rh{background:#FEECEC;color:var(--bad);}.rm{background:#FEF3E2;color:var(--warn);}.rl{background:#EAF4EE;color:var(--good);}
+
+/* GUIDE */
+.guide-table{width:100%;border-collapse:collapse;font-size:13px;}
+.guide-table th{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.04em;padding:7px 8px;background:var(--bg2);text-align:left;border-bottom:1px solid var(--border);}
+.guide-table td{padding:8px 8px;border-bottom:1px solid var(--bg2);vertical-align:top;line-height:1.5;}
+.guide-table tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:500;}
+.ba{background:#FEECEC;color:var(--bad);}.bl{background:#FEF3E2;color:var(--warn);}.bo{background:#EAF4EE;color:var(--good);}
+.tip-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--bg2);font-size:13px;line-height:1.6;}
+.tip-item:last-child{border-bottom:none;}
+.tip-em{font-size:19px;flex-shrink:0;margin-top:1px;}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px 20px;color:var(--muted);}
+.empty p{font-size:13px;line-height:1.8;}
+
+/* SUMMARY */
+.sum-box{background:var(--bg2);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.9;color:var(--text);}
+.sum-note{font-size:11px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 16px);left:50%;transform:translateX(-50%) translateY(10px);background:rgba(30,22,14,.88);color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* MODAL OVERLAY */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;}
+.modal-overlay.show{opacity:1;pointer-events:all;}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:20px 16px calc(20px + var(--safe-b));width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s ease;}
+.modal-overlay.show .modal-sheet{transform:translateY(0);}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:600;color:var(--accent);margin-bottom:14px;}
+
+/* INSTANT ANALYSIS */
+.analysis-section{margin-bottom:14px;}
+.analysis-section-title{font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em;margin-bottom:8px;text-transform:uppercase;}
+.analysis-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.6;padding:6px 0;border-bottom:1px solid var(--bg2);}
+.analysis-item:last-child{border-bottom:none;}
+.analysis-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.tip-box{background:#EAF4EE;border:1px solid #B8DFC6;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;color:#2A5A3A;}
+.warn-box{background:#FEF3E2;border:1px solid #E8C98A;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;color:#7A4A10;}
+.ok-box{background:#EAF4EE;border:1px solid #B8DFC6;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.7;color:#2A5A3A;}
+
+/* DAILY STATUS EDIT MODAL */
+.status-edit-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg2);}
+.status-edit-row:last-child{border-bottom:none;}
+.status-edit-label{font-size:13px;width:60px;flex-shrink:0;}
+.status-edit-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.status-edit-chips .chip{padding:5px 10px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <span style="font-size:20px">🌿</span>
+  <h1>肠胃健康日记</h1>
+  <span class="header-date" id="header-date"></span>
+</div>
+
+<div class="scroll-area">
+
+  <!-- ══ PAGE: LOG ══ -->
+  <div class="page active" id="page-log">
+
+    <!-- Daily Status Bar -->
+    <div class="card" style="padding:12px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:500;color:var(--muted);letter-spacing:.04em;">今日状态</span>
+        <button onclick="openDailyModal()" style="background:none;border:none;font-size:12px;color:var(--accent);cursor:pointer;font-family:'Noto Sans SC',sans-serif;padding:2px 0;">编辑 ›</button>
+      </div>
+      <div class="daily-status-bar">
+        <div class="status-pill" id="sp-sleep" onclick="openDailyModal()">
+          <div class="sp-icon">😴</div>
+          <span class="sp-label">睡眠</span>
+          <span class="sp-val" id="spv-sleep">未填</span>
+        </div>
+        <div class="status-pill" id="sp-stress" onclick="openDailyModal()">
+          <div class="sp-icon">🧠</div>
+          <span class="sp-label">压力</span>
+          <span class="sp-val" id="spv-stress">未填</span>
+        </div>
+        <div class="status-pill" id="sp-exercise" onclick="openDailyModal()">
+          <div class="sp-icon">🚶</div>
+          <span class="sp-label">运动</span>
+          <span class="sp-val" id="spv-exercise">未填</span>
+        </div>
+        <div class="status-pill" id="sp-water" onclick="openDailyModal()">
+          <div class="sp-icon">💧</div>
+          <span class="sp-label">饮水</span>
+          <span class="sp-val" id="spv-water">未填</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meal Log Form -->
+    <div class="card">
+      <div class="section-head">🍽️ 本餐记录</div>
+
+      <span class="fl">日期</span>
+      <input type="date" id="l-date">
+
+      <span class="fl">餐次</span>
+      <div class="chips" id="c-meal">
+        <span class="chip" data-v="早餐">早餐</span>
+        <span class="chip" data-v="午餐">午餐</span>
+        <span class="chip" data-v="晚餐">晚餐</span>
+        <span class="chip" data-v="加餐">加餐</span>
+      </div>
+
+      <span class="fl">吃了什么（逗号分隔）</span>
+      <textarea id="l-food" placeholder="例：白米饭、清炒青菜、豆腐汤、苹果"></textarea>
+
+      <span class="fl">进食方式</span>
+      <div class="chips" id="c-eating">
+        <span class="chip" data-v="细嚼慢咽">细嚼慢咽</span>
+        <span class="chip" data-v="速度较快">速度较快</span>
+        <span class="chip" data-v="边走边吃">边走边吃</span>
+        <span class="chip" data-v="暴食">暴食</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">📋 症状记录</div>
+
+      <span class="fl">整体感受</span>
+      <div class="chips" id="c-overall">
+        <span class="chip" data-v="1" data-cls="sel-good">😊 舒适</span>
+        <span class="chip" data-v="2" data-cls="sel-warn">😐 轻微不适</span>
+        <span class="chip" data-v="3" data-cls="sel-bad">😣 明显不适</span>
+      </div>
+
+      <span class="fl">症状（可多选）</span>
+      <div class="sym-grid" id="sym-grid">
+        <div class="sym-chip" data-v="下腹胀痛">下腹胀痛</div>
+        <div class="sym-chip" data-v="放射性痛">放射性痛</div>
+        <div class="sym-chip" data-v="积食感">积食感</div>
+        <div class="sym-chip" data-v="胃部胀满">胃部胀满</div>
+        <div class="sym-chip" data-v="肠胀气">肠胀气</div>
+        <div class="sym-chip" data-v="稀便">稀便</div>
+        <div class="sym-chip" data-v="排便困难">排便困难</div>
+        <div class="sym-chip" data-v="腹部肿胀">腹部肿胀</div>
+        <div class="sym-chip" data-v="恶心">恶心</div>
+      </div>
+
+      <span class="fl">症状出现时机</span>
+      <select id="l-timing">
+        <option value="">无症状 / 不确定</option>
+        <option value="餐后30分钟内">餐后30分钟内</option>
+        <option value="餐后约1小时">餐后约1小时</option>
+        <option value="餐后2–3小时">餐后2–3小时</option>
+        <option value="餐后4小时以上">餐后4小时以上</option>
+        <option value="与餐无关">与餐无关</option>
+      </select>
+
+      <span class="fl">排便情况</span>
+      <div class="chips" id="c-bowel">
+        <span class="chip" data-v="正常">正常</span>
+        <span class="chip" data-v="稀软便">稀软便</span>
+        <span class="chip" data-v="水样便">水样便</span>
+        <span class="chip" data-v="干硬">干硬</span>
+        <span class="chip" data-v="未排便">未排便</span>
+      </div>
+
+      <span class="fl">备注（可选）</span>
+      <textarea id="l-note" placeholder="服药情况、特殊事项等…"></textarea>
+
+      <button class="btn-primary" onclick="saveLog()">✓ 保存并查看分析</button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: HISTORY ══ -->
+  <div class="page" id="page-history">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="font-size:13px;color:var(--muted)">共 <strong id="hist-count" style="color:var(--text)">0</strong> 条</span>
+      <select id="hist-filter" style="width:auto;padding:7px 30px 7px 10px;font-size:13px;" onchange="renderHistory()">
+        <option value="">全部餐次</option>
+        <option value="早餐">早餐</option>
+        <option value="午餐">午餐</option>
+        <option value="晚餐">晚餐</option>
+        <option value="加餐">加餐</option>
+      </select>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- ══ PAGE: ANALYSIS ══ -->
+  <div class="page" id="page-analysis">
+    <div class="card">
+      <div class="section-head">📊 症状频率</div>
+      <div id="an-sym"></div>
+    </div>
+    <div class="card">
+      <div class="section-head">📈 近期趋势</div>
+      <div id="an-trend"></div>
+    </div>
+    <div class="card">
+      <div class="section-head">🔍 食物风险关联</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">出现在有症状记录中的食物（≥2次才显示）</div>
+      <div id="an-food"></div>
+    </div>
+    <div class="card">
+      <div class="section-head">💡 行为因素</div>
+      <div id="an-behavior"></div>
+    </div>
+    <div class="card">
+      <div class="section-head">📝 观察小结</div>
+      <div id="an-summary"></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: GUIDE ══ -->
+  <div class="page" id="page-guide">
+    <div class="card">
+      <div class="section-head">🍽️ 食物参考表</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+        <table class="guide-table">
+          <thead><tr><th>食物</th><th>建议</th><th>原因</th></tr></thead>
+          <tbody>
+            <tr><td>牛奶、软芝士</td><td><span class="badge ba">避免</span></td><td>乳糖难消化，易产气</td></tr>
+            <tr><td>洋葱、大蒜</td><td><span class="badge ba">避免</span></td><td>高FODMAP，强刺激</td></tr>
+            <tr><td>豆类（黄豆等）</td><td><span class="badge ba">避免</span></td><td>发酵产气，易腹胀</td></tr>
+            <tr><td>碳酸饮料</td><td><span class="badge ba">避免</span></td><td>直接增加肠道气体</td></tr>
+            <tr><td>全麦/燕麦</td><td><span class="badge bl">适量</span></td><td>高纤维，过量胀气</td></tr>
+            <tr><td>苹果、梨、西瓜</td><td><span class="badge bl">适量</span></td><td>果糖含量较高</td></tr>
+            <tr><td>咖啡、浓茶</td><td><span class="badge bl">适量</span></td><td>刺激肠道蠕动</td></tr>
+            <tr><td>辛辣食物</td><td><span class="badge bl">适量</span></td><td>刺激肠胃黏膜</td></tr>
+            <tr><td>白米饭、藜麦</td><td><span class="badge bo">适合</span></td><td>低FODMAP，易消化</td></tr>
+            <tr><td>鸡肉、鱼肉</td><td><span class="badge bo">适合</span></td><td>优质蛋白，低脂</td></tr>
+            <tr><td>胡萝卜、菠菜</td><td><span class="badge bo">适合</span></td><td>肠道友好蔬菜</td></tr>
+            <tr><td>香蕉、蓝莓</td><td><span class="badge bo">适合</span></td><td>肠道友好水果</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-head">✅ 饮食行为建议</div>
+      <div class="tip-item"><span class="tip-em">🕐</span><div><strong>规律三餐</strong> — 固定进餐时间帮助肠道建立节律，避免长时间空腹后暴食。</div></div>
+      <div class="tip-item"><span class="tip-em">🐢</span><div><strong>细嚼慢咽</strong> — 每口咀嚼15次以上，减少吞入气体，降低胀气风险。</div></div>
+      <div class="tip-item"><span class="tip-em">🍽️</span><div><strong>七分饱</strong> — 少食多餐，晚餐尤其不宜过饱，睡前2小时不进食。</div></div>
+      <div class="tip-item"><span class="tip-em">🚶</span><div><strong>饭后散步</strong> — 餐后15分钟后轻走10分钟，促进胃肠蠕动，减少积食感。</div></div>
+      <div class="tip-item"><span class="tip-em">💧</span><div><strong>餐间补水</strong> — 在两餐之间补水，避免大量随餐喝水稀释消化液。</div></div>
+      <div class="tip-item"><span class="tip-em">🧘</span><div><strong>压力管理</strong> — 肠脑轴研究显示压力直接影响肠道，腹式呼吸和冥想有帮助。</div></div>
+    </div>
+    <div class="card" style="border-color:#F5C5C5;">
+      <div class="section-head" style="color:var(--bad);">⚠️ 需要就医的情况</div>
+      <ul style="font-size:13px;line-height:2;padding-left:18px;">
+        <li>大便带血或呈黑色</li>
+        <li>夜间痛醒或持续剧烈疼痛</li>
+        <li>短期内体重无故明显下降</li>
+        <li>发热伴腹痛</li>
+        <li>症状突然明显加重</li>
+        <li>家族有肠癌或克罗恩病史</li>
+      </ul>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">以上情况请及时就医，不应仅靠饮食调整。</p>
+    </div>
+  </div>
+
+</div><!-- end scroll-area -->
+
+<nav class="bottom-nav">
+  <button class="nav-item active" id="nav-log" onclick="switchPage('log')">
+    <span class="nav-icon">✏️</span>记录
+  </button>
+  <button class="nav-item" id="nav-history" onclick="switchPage('history')">
+    <span class="nav-icon">📖</span>历史
+  </button>
+  <button class="nav-item" id="nav-analysis" onclick="switchPage('analysis')">
+    <span class="nav-icon">📊</span>分析
+  </button>
+  <button class="nav-item" id="nav-guide" onclick="switchPage('guide')">
+    <span class="nav-icon">📘</span>指南
+  </button>
+</nav>
+
+<!-- DAILY STATUS MODAL -->
+<div class="modal-overlay" id="daily-modal" onclick="closeDailyIfBg(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">今日状态</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">可随时补充或修改，今天只记一次</div>
+
+    <div class="status-edit-row">
+      <span class="status-edit-label">😴 睡眠</span>
+      <div class="status-edit-chips chips" id="ds-sleep">
+        <span class="chip" data-v="好" data-cls="sel-good">好</span>
+        <span class="chip" data-v="一般" data-cls="sel-warn">一般</span>
+        <span class="chip" data-v="差" data-cls="sel-bad">差</span>
+      </div>
+    </div>
+    <div class="status-edit-row">
+      <span class="status-edit-label">🧠 压力</span>
+      <div class="status-edit-chips chips" id="ds-stress">
+        <span class="chip" data-v="低" data-cls="sel-good">低</span>
+        <span class="chip" data-v="中" data-cls="sel-warn">中</span>
+        <span class="chip" data-v="高" data-cls="sel-bad">高</span>
+      </div>
+    </div>
+    <div class="status-edit-row">
+      <span class="status-edit-label">🚶 运动</span>
+      <div class="status-edit-chips chips" id="ds-exercise">
+        <span class="chip" data-v="无运动">无运动</span>
+        <span class="chip" data-v="散步">散步</span>
+        <span class="chip" data-v="轻度">轻度</span>
+        <span class="chip" data-v="中高强度">中高强度</span>
+      </div>
+    </div>
+    <div class="status-edit-row">
+      <span class="status-edit-label">💧 饮水</span>
+      <div class="status-edit-chips chips" id="ds-water">
+        <span class="chip" data-v="充足" data-cls="sel-good">充足</span>
+        <span class="chip" data-v="一般" data-cls="sel-warn">一般</span>
+        <span class="chip" data-v="不足" data-cls="sel-bad">不足</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveDailyStatus()" style="margin-top:20px;">保存今日状态</button>
+    <button class="btn-secondary" onclick="closeDailyModal()">关闭</button>
+  </div>
+</div>
+
+<!-- INSTANT ANALYSIS MODAL -->
+<div class="modal-overlay" id="analysis-modal" onclick="closeAnalysisIfBg(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">本餐分析 ✨</div>
+    <div id="instant-analysis-content"></div>
+    <button class="btn-primary" onclick="closeAnalysisModal()" style="margin-top:4px;">知道了</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── FOOD RISK DATABASE ──
+const RISK_FOODS = {
+  high: ['牛奶','奶酪','芝士','洋葱','大蒜','豆','黄豆','扁豆','黑豆','豆腐','豆浆','可乐','雪碧','碳酸','汽水'],
+  medium: ['燕麦','全麦','苹果','梨','西瓜','咖啡','茶','辣','花椰菜','西兰花','卷心菜','蘑菇']
+};
+
+// ── DATA ──
+let logs = [];
+let dailyStatus = {};
+try { logs = JSON.parse(localStorage.getItem('gut_v3_logs') || '[]'); } catch(e) {}
+try { dailyStatus = JSON.parse(localStorage.getItem('gut_v3_daily') || '{}'); } catch(e) {}
+
+function persist() {
+  try {
+    localStorage.setItem('gut_v3_logs', JSON.stringify(logs));
+    localStorage.setItem('gut_v3_daily', JSON.stringify(dailyStatus));
+  } catch(e) {}
+}
+
+// ── STATE ──
+let sel = {};
+let dsTemp = {};
+const todayKey = () => new Date().toISOString().slice(0,10);
+
+// ── INIT ──
+const today = new Date();
+document.getElementById('l-date').value = today.toISOString().slice(0,10);
+document.getElementById('header-date').textContent = today.toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'});
+refreshDailyStatusBar();
+
+// ── CHIP HELPERS ──
+function initSingleChips(groupId, onSelect) {
+  const el = document.getElementById(groupId);
+  if (!el) return;
+  el.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const already = chip.classList.contains('sel')||chip.classList.contains('sel-good')||chip.classList.contains('sel-warn')||chip.classList.contains('sel-bad');
+    el.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+    if (!already) {
+      chip.classList.add(chip.dataset.cls || 'sel');
+      if (onSelect) onSelect(chip.dataset.v);
+      return chip.dataset.v;
+    } else {
+      if (onSelect) onSelect('');
+    }
+  });
+}
+
+function setChipVal(groupId, val, selMap) {
+  const el = document.getElementById(groupId);
+  if (!el || !val) return;
+  el.querySelectorAll('.chip').forEach(c => {
+    c.className = 'chip';
+    if (c.dataset.v === val) c.classList.add(c.dataset.cls || 'sel');
+  });
+}
+
+// ── MEAL FORM CHIPS ──
+['c-meal','c-eating','c-overall','c-bowel'].forEach(gid => {
+  initSingleChips(gid, v => { sel[gid] = v; });
+});
+
+document.getElementById('sym-grid').addEventListener('click', e => {
+  const chip = e.target.closest('.sym-chip');
+  if (!chip) return;
+  chip.classList.toggle('sel');
+  if (!sel.syms) sel.syms = [];
+  const v = chip.dataset.v;
+  sel.syms = chip.classList.contains('sel') ? [...new Set([...sel.syms, v])] : sel.syms.filter(x => x !== v);
+});
+
+// ── DAILY STATUS MODAL ──
+function openDailyModal() {
+  const td = todayKey();
+  const cur = dailyStatus[td] || {};
+  dsTemp = {...cur};
+
+  // Restore chip states
+  ['sleep','stress','exercise','water'].forEach(k => {
+    const el = document.getElementById('ds-'+k);
+    if (!el) return;
+    el.querySelectorAll('.chip').forEach(c => {
+      c.className = 'chip';
+      if (c.dataset.v === cur[k]) c.classList.add(c.dataset.cls || 'sel');
+    });
+  });
+
+  // Wire up daily chips
+  ['ds-sleep','ds-stress','ds-exercise','ds-water'].forEach(gid => {
+    const key = gid.replace('ds-','');
+    const el = document.getElementById(gid);
+    if (!el) return;
+    el.onclick = e => {
+      const chip = e.target.closest('.chip');
+      if (!chip) return;
+      const already = chip.classList.contains('sel')||chip.classList.contains('sel-good')||chip.classList.contains('sel-warn')||chip.classList.contains('sel-bad');
+      el.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+      if (!already) { chip.classList.add(chip.dataset.cls||'sel'); dsTemp[key] = chip.dataset.v; }
+      else { delete dsTemp[key]; }
+    };
+  });
+
+  document.getElementById('daily-modal').classList.add('show');
+}
+
+function closeDailyModal() { document.getElementById('daily-modal').classList.remove('show'); }
+function closeDailyIfBg(e) { if (e.target === document.getElementById('daily-modal')) closeDailyModal(); }
+
+function saveDailyStatus() {
+  const td = todayKey();
+  dailyStatus[td] = {...(dailyStatus[td]||{}), ...dsTemp};
+  persist();
+  refreshDailyStatusBar();
+  closeDailyModal();
+  toast('✓ 今日状态已保存');
+}
+
+function refreshDailyStatusBar() {
+  const td = todayKey();
+  const cur = dailyStatus[td] || {};
+  const fields = [
+    {key:'sleep', id:'sp-sleep', valId:'spv-sleep'},
+    {key:'stress', id:'sp-stress', valId:'spv-stress'},
+    {key:'exercise', id:'sp-exercise', valId:'spv-exercise'},
+    {key:'water', id:'sp-water', valId:'spv-water'},
+  ];
+  fields.forEach(({key,id,valId}) => {
+    const pill = document.getElementById(id);
+    const valEl = document.getElementById(valId);
+    const v = cur[key];
+    if (v) { pill.classList.add('filled'); valEl.textContent = v; }
+    else { pill.classList.remove('filled'); valEl.textContent = '未填'; }
+  });
+}
+
+// ── SAVE MEAL LOG ──
+function saveLog() {
+  const food = document.getElementById('l-food').value.trim();
+  if (!food) { toast('请填写饮食内容 🍚'); return; }
+
+  const dateVal = document.getElementById('l-date').value;
+  const log = {
+    id: Date.now(),
+    date: dateVal,
+    meal: sel['c-meal'] || '',
+    food,
+    eating: sel['c-eating'] || '',
+    overall: sel['c-overall'] || '',
+    symptoms: sel.syms || [],
+    timing: document.getElementById('l-timing').value,
+    bowel: sel['c-bowel'] || '',
+    note: document.getElementById('l-note').value.trim(),
+    dailyRef: dateVal  // links to dailyStatus[dateVal]
+  };
+
+  logs.unshift(log);
+  persist();
+
+  // Show instant analysis
+  showInstantAnalysis(log);
+  resetForm();
+}
+
+// ── INSTANT ANALYSIS ──
+function showInstantAnalysis(log) {
+  const foods = log.food.split(/[，,、\s]+/).map(f=>f.trim()).filter(f=>f.length>=2&&f.length<=10);
+  const hasSym = log.symptoms && log.symptoms.length > 0;
+  const ds = dailyStatus[log.date] || {};
+
+  let html = '';
+
+  // 1. Food risk check
+  const highRisk = [], medRisk = [];
+  foods.forEach(f => {
+    if (RISK_FOODS.high.some(r => f.includes(r) || r.includes(f))) highRisk.push(f);
+    else if (RISK_FOODS.medium.some(r => f.includes(r) || r.includes(f))) medRisk.push(f);
+  });
+
+  if (highRisk.length || medRisk.length) {
+    html += `<div class="analysis-section">
+      <div class="analysis-section-title">🔍 食物风险提示</div>`;
+    if (highRisk.length) {
+      html += `<div class="warn-box" style="margin-bottom:8px;">⚠️ <strong>${highRisk.join('、')}</strong> 属于对敏感肠胃刺激较大的食物，建议餐后特别留意是否出现腹胀或不适。</div>`;
+    }
+    if (medRisk.length) {
+      html += `<div class="warn-box" style="background:#FEF8F0;border-color:#E8D8C0;color:#7A5A20;">💡 <strong>${medRisk.join('、')}</strong> 属于中等风险食物，适量进食问题不大，但如有不适可优先排查。</div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="analysis-section"><div class="ok-box">✓ 这餐食物整体对肠胃较为友好，继续保持。</div></div>`;
+  }
+
+  // 2. Historical pattern
+  const prevLogsWithFood = logs.slice(1).filter(l => {
+    const lFoods = l.food.split(/[，,、\s]+/).map(f=>f.trim());
+    return foods.some(f => lFoods.some(lf => lf.includes(f) || f.includes(lf)));
+  });
+  if (prevLogsWithFood.length >= 2) {
+    const symCount = prevLogsWithFood.filter(l => (l.symptoms||[]).length > 0).length;
+    const rate = Math.round(symCount / prevLogsWithFood.length * 100);
+    const sharedFoods = foods.filter(f =>
+      prevLogsWithFood.some(l => l.food.split(/[，,、\s]+/).some(lf => lf.includes(f)||f.includes(lf)))
+    );
+    if (rate >= 50) {
+      html += `<div class="analysis-section"><div class="analysis-section-title">📊 历史规律</div>
+        <div class="warn-box">您过去吃含 <strong>${sharedFoods.slice(0,2).join('、')}</strong> 的餐次中，有 <strong>${rate}%</strong> 出现了症状，这次餐后建议多加留意。</div></div>`;
+    } else if (rate > 0) {
+      html += `<div class="analysis-section"><div class="analysis-section-title">📊 历史规律</div>
+        <div class="sum-box">您过去吃含 <strong>${sharedFoods.slice(0,2).join('、')}</strong> 的餐次中，有 ${rate}% 出现症状，整体风险不高。</div></div>`;
+    }
+  }
+
+  // 3. Current symptoms
+  if (hasSym) {
+    html += `<div class="analysis-section"><div class="analysis-section-title">🩺 本餐症状</div>`;
+    const symTips = {
+      '积食感': '进食后感到积食，可能与进食速度过快或食物量过多有关，下次尝试减少份量并细嚼慢咽。',
+      '肠胀气': '肠胀气常见于豆类、碳酸饮料或进食时吞入过多空气，可尝试饭后轻度散步帮助排气。',
+      '稀便': '稀便可能与高脂、高糖食物或肠道敏感有关，注意是否与本餐特定食物相关。',
+      '下腹胀痛': '下腹胀痛结合本餐食物来看，建议排查高FODMAP食物（如豆类、洋葱）的影响。',
+      '胃部胀满': '胃部胀满可能与进食过快或过量有关，可尝试少食多餐。',
+    };
+    log.symptoms.forEach(s => {
+      const tip = symTips[s];
+      html += `<div class="analysis-item"><span class="analysis-icon">•</span><div><strong>${s}</strong>${tip ? ' — '+tip : ''}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // 4. Daily status tips
+  const tips = [];
+  if (ds.stress === '高') tips.push('今天压力较高，压力会通过肠脑轴直接影响肠道功能，可尝试饭后腹式呼吸放松。');
+  if (ds.sleep === '差') tips.push('昨晚睡眠较差，睡眠不足会降低肠道修复能力，今天的症状可能有部分与此有关。');
+  if (ds.water === '不足') tips.push('今日饮水不足，建议多补充水分，有助于促进肠道蠕动。');
+  if (ds.exercise === '无运动') tips.push('今天暂无运动记录，饭后短暂散步10分钟有助于减少积食感。');
+
+  if (tips.length) {
+    html += `<div class="analysis-section"><div class="analysis-section-title">💡 今日状态提示</div>`;
+    tips.forEach(t => {
+      html += `<div class="analysis-item"><span class="analysis-icon">💡</span><div>${t}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // 5. If no symptoms, positive feedback
+  if (!hasSym && !highRisk.length) {
+    html += `<div class="analysis-section"><div class="ok-box">🎉 这餐记录很好！没有症状、食物也较为温和。继续坚持记录，帮助找到最适合您的饮食规律。</div></div>`;
+  }
+
+  document.getElementById('instant-analysis-content').innerHTML = html;
+  document.getElementById('analysis-modal').classList.add('show');
+}
+
+function closeAnalysisModal() { document.getElementById('analysis-modal').classList.remove('show'); }
+function closeAnalysisIfBg(e) { if (e.target === document.getElementById('analysis-modal')) closeAnalysisModal(); }
+
+// ── RESET FORM ──
+function resetForm() {
+  document.getElementById('l-food').value = '';
+  document.getElementById('l-note').value = '';
+  document.getElementById('l-timing').value = '';
+  document.getElementById('l-date').value = new Date().toISOString().slice(0,10);
+  ['c-meal','c-eating','c-overall','c-bowel'].forEach(gid => {
+    const el = document.getElementById(gid);
+    if (el) el.querySelectorAll('.chip').forEach(c => c.className = 'chip');
+  });
+  document.querySelectorAll('.sym-chip').forEach(c => c.classList.remove('sel'));
+  sel = {};
+}
+
+// ── PAGE SWITCH ──
+function switchPage(name) {
+  ['log','history','analysis','guide'].forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('active', p===name);
+    document.getElementById('nav-'+p).classList.toggle('active', p===name);
+  });
+  document.querySelector('.scroll-area').scrollTop = 0;
+  if (name==='history') renderHistory();
+  if (name==='analysis') renderAnalysis();
+}
+
+// ── HISTORY ──
+function renderHistory() {
+  const filter = document.getElementById('hist-filter').value;
+  const list = filter ? logs.filter(l=>l.meal===filter) : logs;
+  document.getElementById('hist-count').textContent = list.length;
+  const el = document.getElementById('history-list');
+  if (!list.length) { el.innerHTML=`<div class="empty"><p style="font-size:32px">📖</p><p>还没有记录<br>去"记录"页添加第一条吧</p></div>`; return; }
+  const sd={'1':'sv1','2':'sv2','3':'sv3','':'sv2'};
+  const sl={'1':'舒适','2':'轻微不适','3':'明显不适','':'—'};
+  el.innerHTML = list.map(log => {
+    const ds = dailyStatus[log.date] || {};
+    const dsText = [ds.sleep&&'睡眠'+ds.sleep, ds.stress&&'压力'+ds.stress, ds.water&&'水'+ds.water].filter(Boolean).join(' · ');
+    return `<div class="log-card">
+      <div class="log-meta">
+        <span class="sev-dot ${sd[log.overall]}"></span>
+        <span class="log-date-text">${log.date} ${log.meal||''}</span>
+        <span style="font-size:11px;color:var(--muted)">${sl[log.overall]}</span>
+        ${log.bowel?`<span style="font-size:11px;color:var(--muted)">·${log.bowel}</span>`:''}
+      </div>
+      <div class="log-food-text">🍽 ${log.food}</div>
+      ${log.symptoms&&log.symptoms.length
+        ?`<div class="sym-pills">${log.symptoms.map(s=>`<span class="sym-pill">${s}</span>`).join('')}</div>`
+        :`<div style="font-size:12px;color:var(--good)">✓ 无明显症状</div>`}
+      ${log.timing?`<div class="log-note-text">⏱ ${log.timing}</div>`:''}
+      ${dsText?`<div class="log-note-text">📅 ${dsText}</div>`:''}
+      ${log.note?`<div class="log-note-text">📝 ${log.note}</div>`:''}
+      <button class="del-btn" onclick="delLog(${log.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function delLog(id) {
+  logs = logs.filter(l=>l.id!==id);
+  persist();
+  renderHistory();
+  toast('已删除');
+}
+
+// ── LONG-TERM ANALYSIS ──
+function renderAnalysis() {
+  const n = logs.length;
+  const sc = {};
+  logs.forEach(l => (l.symptoms||[]).forEach(s => { sc[s]=(sc[s]||0)+1; }));
+  const ss = Object.entries(sc).sort((a,b)=>b[1]-a[1]);
+
+  // Symptom freq
+  const symEl = document.getElementById('an-sym');
+  if (!n) { symEl.innerHTML=emptyHTML(); }
+  else if (!ss.length) { symEl.innerHTML=`<div style="font-size:13px;color:var(--good);padding:8px 0">🎉 暂无症状记录！</div>`; }
+  else { symEl.innerHTML=ss.map(([s,c])=>`<div class="stat-row"><span class="stat-name">${s}</span><div class="sbar-bg"><div class="sbar-fill" style="width:${Math.round(c/n*100)}%"></div></div><span class="stat-val">${c}次</span></div>`).join(''); }
+
+  // Trend
+  const dm = {};
+  logs.forEach(l => { if (!l.overall||!l.date) return; if (!dm[l.date]) dm[l.date]=[]; dm[l.date].push(+l.overall); });
+  const days = Object.keys(dm).sort().slice(-14);
+  const tEl = document.getElementById('an-trend');
+  if (days.length < 2) { tEl.innerHTML=`<div class="empty" style="padding:16px"><p>至少需要2天数据</p></div>`; }
+  else {
+    const vals = days.map(d=>{const a=dm[d];return a.reduce((x,y)=>x+y,0)/a.length;});
+    const W=300,H=80,px=14,py=10;
+    const xs=(W-px*2)/(days.length-1);
+    const ys=v=>H-py-(v-1)/2*(H-py*2);
+    const pts=vals.map((v,i)=>`${px+i*xs},${ys(v)}`).join(' ');
+    const colors=['#3D7A52','#B07030','#A83830'];
+    tEl.innerHTML=`<div style="width:100%;overflow:hidden"><svg viewBox="0 0 ${W} ${H}" width="100%">
+      <text x="2" y="${ys(1)+4}" font-size="8" fill="#3D7A52">好</text>
+      <text x="2" y="${ys(2)+4}" font-size="8" fill="#B07030">中</text>
+      <text x="2" y="${ys(3)+4}" font-size="8" fill="#A83830">差</text>
+      <polyline points="${pts}" fill="none" stroke="#B07A48" stroke-width="1.5" stroke-linejoin="round"/>
+      ${vals.map((v,i)=>`<circle cx="${px+i*xs}" cy="${ys(v)}" r="3.5" fill="${colors[Math.round(v)-1]||colors[1]}"/>
+        <text x="${px+i*xs}" y="${H-1}" text-anchor="middle" font-size="7.5" fill="#7A7060">${days[i].slice(5)}</text>`).join('')}
+    </svg></div>`;
+  }
+
+  // Food risk
+  const fm = {};
+  logs.forEach(l => {
+    const hasSym=(l.symptoms||[]).length>0;
+    (l.food||'').split(/[，,、\s]+/).map(f=>f.trim()).filter(f=>f.length>=2&&f.length<=8).forEach(f=>{
+      if (!fm[f]) fm[f]={t:0,s:0};
+      fm[f].t++; if (hasSym) fm[f].s++;
+    });
+  });
+  const rf=Object.entries(fm).filter(([,v])=>v.t>=2).map(([food,v])=>({food,rate:v.s/v.t,cnt:v.t})).sort((a,b)=>b.rate-a.rate).slice(0,8);
+  const fEl=document.getElementById('an-food');
+  if (!rf.length) { fEl.innerHTML=`<div class="empty" style="padding:16px"><p>需要更多记录<br>建议至少记录7天</p></div>`; }
+  else { fEl.innerHTML=rf.map(({food,rate,cnt})=>{
+    const[rc,rl,clr]=rate>=.7?['rh','⚠ 高风险','var(--bad)']:rate>=.4?['rm','注意','var(--warn)']:['rl','暂安全','var(--good)'];
+    return `<div class="frow"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${food}</span><div class="fbar-bg"><div class="fbar-fill" style="width:${Math.round(rate*100)}%;background:${clr}"></div></div><span class="risk-chip ${rc}">${rl}</span></div>`;
+  }).join('');}
+
+  // Behavior (using dailyStatus)
+  const bEl=document.getElementById('an-behavior');
+  const rows=[];
+  const allDays=Object.keys(dailyStatus);
+  const stressHighDays=allDays.filter(d=>dailyStatus[d].stress==='高');
+  const sleepBadDays=allDays.filter(d=>dailyStatus[d].sleep==='差');
+  if (stressHighDays.length>=2) {
+    const dayLogs=logs.filter(l=>stressHighDays.includes(l.date));
+    if (dayLogs.length) { const r=Math.round(dayLogs.filter(l=>(l.symptoms||[]).length>0).length/dayLogs.length*100); rows.push(`<div class="stat-row"><span class="stat-name">高压力日有症状率</span><span style="font-weight:500;color:${r>60?'var(--bad)':'var(--good)'}">${r}%</span></div>`); }
+  }
+  if (sleepBadDays.length>=2) {
+    const dayLogs=logs.filter(l=>sleepBadDays.includes(l.date));
+    if (dayLogs.length) { const r=Math.round(dayLogs.filter(l=>(l.symptoms||[]).length>0).length/dayLogs.length*100); rows.push(`<div class="stat-row"><span class="stat-name">睡眠差次日有症状率</span><span style="font-weight:500;color:${r>60?'var(--bad)':'var(--good)'}">${r}%</span></div>`); }
+  }
+  bEl.innerHTML=rows.length?rows.join(''):`<div class="empty" style="padding:16px"><p>填写更多每日状态后显示</p></div>`;
+
+  // Summary
+  const sEl=document.getElementById('an-summary');
+  if (n<3){sEl.innerHTML=`<div class="empty" style="padding:16px"><p>至少记录3条后显示小结</p></div>`;return;}
+  const sr=Math.round(logs.filter(l=>(l.symptoms||[]).length>0).length/n*100);
+  let parts=[`您共有 <strong>${n}</strong> 条饮食记录，约 <strong>${sr}%</strong> 的餐次出现症状。`];
+  if (ss[0]) parts.push(`最常见症状是 <strong>${ss[0][0]}</strong>（${ss[0][1]}次）。`);
+  if (rf[0]&&rf[0].rate>=.5) parts.push(`<strong>${rf[0].food}</strong> 与症状关联最频繁，建议重点观察。`);
+  sEl.innerHTML=`<div class="sum-box">${parts.join('<br>')}<p class="sum-note">💡 以上为统计观察，非医学诊断。如症状持续请就医。</p></div>`;
+}
+
+function emptyHTML(){return`<div class="empty"><p>暂无数据</p></div>`;}
+
+// ── TOAST ──
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+</script>
+</body>
+</html>
